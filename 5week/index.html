@@ -1,1 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cat Illustration</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: lightblue;
+    }
 
+    .background {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background: url('cat.png') no-repeat center center;
+      background-size: contain; /* 고양이 이미지 크기 조정 */
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const catCount = 20; // 고양이 이미지 개수 변경
+    const cats = []; // 고양이 이미지 요소 배열
+
+    // 랜덤 색상 생성 함수
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    // 고양이 이미지가 랜덤으로 화면 내에서 움직이도록 하는 함수
+    function moveCat(catImage) {
+      const x = Math.random() * (window.innerWidth - 200); // 고양이 크기를 고려한 최대 x 좌표
+      const y = Math.random() * (window.innerHeight - 200); // 고양이 크기를 고려한 최대 y 좌표
+      catImage.style.left = `${x}px`;
+      catImage.style.top = `${y}px`;
+    }
+
+    // 고양이 이미지 생성 및 초기화
+    for (let i = 0; i < catCount; i++) {
+      const catImage = document.createElement('div');
+      catImage.classList.add('background');
+      document.body.appendChild(catImage);
+      cats.push(catImage);
+      moveCat(catImage); // 초기 위치 설정
+
+      // 마우스가 고양이 위로 갈 때 고양이가 이동하는 기능
+      catImage.addEventListener('mouseenter', function() {
+        moveCat(catImage);
+      });
+    }
+
+    // 마우스가 움직일 때마다 배경색을 랜덤으로 변경
+    document.addEventListener('mousemove', function(event) {
+      document.body.style.backgroundColor = getRandomColor();
+    });
+  </script>
+</body>
+</html>

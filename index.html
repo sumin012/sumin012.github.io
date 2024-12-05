@@ -40,7 +40,7 @@
       height: 150px;
       background: url('bomb.png') no-repeat center center;
       background-size: contain;
-      z-index: -1; /* Bomb이 가장 아래로 오도록 설정 */
+      z-index: -1;
     }
 
     @keyframes disappear {
@@ -86,15 +86,37 @@
     .caught {
       pointer-events: none;
     }
+
+    /* Start 버튼 */
+    .start-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .start-button {
+      width: 1500px; /* 기존 300px에서 5배로 */
+      height: 500px; /* 기존 100px에서 5배로 */
+      background: url('start.png') no-repeat center center;
+      background-size: contain;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
   </style>
 </head>
-<body style="background-color: rgb(53, 211, 136);">
+<body>
+  <div class="start-container">
+    <button class="start-button"></button>
+  </div>
+
   <script>
     const catCount = 20;
     const cats = [];
     let isCatCaught = false;
 
-    // 고양이 이동 함수
     function moveCat(catImage) {
       const x = Math.random() * (window.innerWidth - 200);
       const y = Math.random() * (window.innerHeight - 200);
@@ -113,13 +135,12 @@
     }
 
     function startCatMovement(catImage) {
-      // 랜덤한 시간(1초에서 3초 사이) 후 이동
       const randomDelay = Math.random() * 2000 + 1000;
 
       setTimeout(() => {
         if (!catImage.classList.contains('caught')) {
-          moveCat(catImage); // 고양이를 랜덤 위치로 이동
-          startCatMovement(catImage); // 다시 이동을 예약
+          moveCat(catImage);
+          startCatMovement(catImage);
         }
       }, randomDelay);
     }
@@ -138,62 +159,65 @@
       { id: 11, image: '11.png', reaction: '11-11.png', death: '11-11-11.png' }
     ];
 
-    catDetails.forEach(catData => {
-      const catImage = createCat(catData);
-      cats.push(catImage);
-      moveCat(catImage); // 처음 위치 설정
-      startCatMovement(catImage); // 각 고양이가 독립적으로 움직이기 시작
+    function startGame() {
+      document.querySelector('.start-container').style.display = 'none';
 
-      catImage.addEventListener('mouseenter', function () {
-        if (!catImage.classList.contains('caught')) {
-          // 반응 이미지로 변경
-          catImage.style.backgroundImage = `url('${catImage.dataset.reaction}')`;
-        }
-      });
+      catDetails.forEach(catData => {
+        const catImage = createCat(catData);
+        cats.push(catImage);
+        moveCat(catImage);
+        startCatMovement(catImage);
 
-      catImage.addEventListener('mouseleave', function () {
-        if (!catImage.classList.contains('caught')) {
-          // 원래 이미지로 복원
-          catImage.style.backgroundImage = `url('${catData.image}')`;
-        }
-      });
+        catImage.addEventListener('mouseenter', function () {
+          if (!catImage.classList.contains('caught')) {
+            catImage.style.backgroundImage = `url('${catImage.dataset.reaction}')`;
+          }
+        });
 
-      catImage.addEventListener('click', function () {
-        if (!isCatCaught) {
-          isCatCaught = true;
-          catImage.style.backgroundImage = `url('${catImage.dataset.death}')`;
-          catImage.classList.add('caught');
+        catImage.addEventListener('mouseleave', function () {
+          if (!catImage.classList.contains('caught')) {
+            catImage.style.backgroundImage = `url('${catData.image}')`;
+          }
+        });
 
-          // Bomb 추가 (z-index를 -1로 설정하여 가장 아래로 배치)
-          const bomb = document.createElement('div');
-          bomb.classList.add('bomb');
-          bomb.style.left = `${catImage.offsetLeft + 25}px`;
-          bomb.style.top = `${catImage.offsetTop + 25}px`;
-          document.body.appendChild(bomb);
+        catImage.addEventListener('click', function () {
+          if (!isCatCaught) {
+            isCatCaught = true;
+            catImage.style.backgroundImage = `url('${catImage.dataset.death}')`;
+            catImage.classList.add('caught');
 
-          const mouse = document.createElement('div');
-          mouse.classList.add('mouse');
-          mouse.style.left = `${catImage.offsetLeft + 50}px`;
-          mouse.style.top = `${catImage.offsetTop + 50}px`;
-          document.body.appendChild(mouse);
-          mouse.style.display = 'block';
-          mouse.style.animation = 'fly 0.5s forwards';
+            const bomb = document.createElement('div');
+            bomb.classList.add('bomb');
+            bomb.style.left = `${catImage.offsetLeft + 25}px`;
+            bomb.style.top = `${catImage.offsetTop + 25}px`;
+            document.body.appendChild(bomb);
 
-          setTimeout(() => {
-            catImage.classList.add('disappear');
-            bomb.classList.add('disappear');
-            mouse.classList.add('disappear');
+            const mouse = document.createElement('div');
+            mouse.classList.add('mouse');
+            mouse.style.left = `${catImage.offsetLeft + 50}px`;
+            mouse.style.top = `${catImage.offsetTop + 50}px`;
+            document.body.appendChild(mouse);
+            mouse.style.display = 'block';
+            mouse.style.animation = 'fly 0.5s forwards';
 
             setTimeout(() => {
-              catImage.remove();
-              bomb.remove();
-              mouse.remove();
-              isCatCaught = false;
+              catImage.classList.add('disappear');
+              bomb.classList.add('disappear');
+              mouse.classList.add('disappear');
+
+              setTimeout(() => {
+                catImage.remove();
+                bomb.remove();
+                mouse.remove();
+                isCatCaught = false;
+              }, 500);
             }, 500);
-          }, 500);
-        }
+          }
+        });
       });
-    });
+    }
+
+    document.querySelector('.start-button').addEventListener('click', startGame);
   </script>
 </body>
 </html>

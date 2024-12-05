@@ -3,89 +3,197 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jingle Bell</title>
-  
-  
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@400;700&display=swap">
-
+  <title>Catch the Cat Game</title>
   <style>
-    body {
+    body, html {
       margin: 0;
       padding: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column; 
-      justify-content: center;
-      align-items: center;
-      background-image: url('christmas-background.jpg');
-      background-size: cover;
-      background-position: center;
+      height: 100%;
+      overflow: hidden;
+      background-color: lightblue;
+    }
+
+    .background {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background-size: contain;
       background-repeat: no-repeat;
-    }
-
-    .container {
-      text-align: center;
-      color: white;
-    }
-
-   
-    h1 {
-      font-family: 'Mountains of Christmas', cursive; /* 폰트 변경 */
-      font-size: 2.5rem;
-      margin-top: 10px; 
-      margin-bottom: 50px; 
-    }
-
-    #handbell {
-      width: 300px; 
+      background-position: center;
       cursor: pointer;
-      transition: transform 0.2s ease;
+      transition: top 1s ease, left 1s ease;
     }
 
- 
-    @keyframes shake {
-      0% { transform: rotate(0deg); }
-      25% { transform: rotate(-15deg); }
-      50% { transform: rotate(15deg); }
-      75% { transform: rotate(-10deg); }
-      100% { transform: rotate(0deg); }
+    .mouse {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background: url('mouse.png') no-repeat center center;
+      background-size: contain;
+      display: none;
+      z-index: 20;
     }
 
-    .shaking {
-      animation: shake 0.5s;
+    .bomb {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      background: url('bomb.png') no-repeat center center;
+      background-size: contain;
+      z-index: -1; /* Bomb이 가장 아래로 오도록 설정 */
+    }
+
+    @keyframes disappear {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+    }
+
+    .disappear {
+      animation: disappear 0.5s forwards;
+    }
+
+    @keyframes fly {
+      0% {
+        transform: translate(-50%, -100%) rotate(0deg) scale(1);
+      }
+      25% {
+        transform: translate(50px, -50px) rotate(90deg) scale(1.5);
+      }
+      50% {
+        transform: translate(100px, 0) rotate(180deg) scale(2);
+      }
+      75% {
+        transform: translate(50px, 50px) rotate(270deg) scale(1.5);
+      }
+      100% {
+        transform: translate(0, 0) rotate(360deg) scale(1);
+      }
+    }
+
+    .trembling {
+      background: url('trembling.png'), url('cat.png');
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+
+    .caught {
+      pointer-events: none;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Click the handbell to play the Jingle Bell!!</h1>
-    <img id="handbell" src="bell.jpeg" alt="Handbell" onclick="toggleMusicAndShake()">
-  </div>
-
-  <audio id="bgm" src="jinglebell.mp3"></audio>
-
+<body style="background-color: rgb(53, 211, 136);">
   <script>
-    var isPlaying = false; 
+    const catCount = 20;
+    const cats = [];
+    let isCatCaught = false;
 
-    function toggleMusicAndShake() {
-      var bgm = document.getElementById('bgm');
-      var handbell = document.getElementById('handbell');
-
-      if (isPlaying) {
-        bgm.pause(); 
-      } else {
-        bgm.play(); 
-      }
-
-      isPlaying = !isPlaying; 
-
-      handbell.classList.add('shaking');
-
-      setTimeout(function() {
-        handbell.classList.remove('shaking');
-      }, 500); 
+    // 고양이 이동 함수
+    function moveCat(catImage) {
+      const x = Math.random() * (window.innerWidth - 200);
+      const y = Math.random() * (window.innerHeight - 200);
+      catImage.style.left = `${x}px`;
+      catImage.style.top = `${y}px`;
     }
+
+    function createCat(catData) {
+      const catImage = document.createElement('div');
+      catImage.classList.add('background');
+      catImage.style.backgroundImage = `url('${catData.image}')`;
+      catImage.dataset.reaction = catData.reaction;
+      catImage.dataset.death = catData.death;
+      document.body.appendChild(catImage);
+      return catImage;
+    }
+
+    function startCatMovement(catImage) {
+      // 랜덤한 시간(1초에서 3초 사이) 후 이동
+      const randomDelay = Math.random() * 2000 + 1000;
+
+      setTimeout(() => {
+        if (!catImage.classList.contains('caught')) {
+          moveCat(catImage); // 고양이를 랜덤 위치로 이동
+          startCatMovement(catImage); // 다시 이동을 예약
+        }
+      }, randomDelay);
+    }
+
+    const catDetails = [
+      { id: 1, image: '1.png', reaction: '1-1.png', death: '1-1-1.png' },
+      { id: 2, image: '2.png', reaction: '2-2.png', death: '2-2-2.png' },
+      { id: 3, image: '3.png', reaction: '3-3.png', death: '3-3-3.png' },
+      { id: 4, image: '4.png', reaction: '4-4.png', death: '4-4-4.png' },
+      { id: 5, image: '5.png', reaction: '5-5.png', death: '5-5-5.png' },
+      { id: 6, image: '6.png', reaction: '6-6.png', death: '6-6-6.png' },
+      { id: 7, image: '7.png', reaction: '7-7.png', death: '7-7-7.png' },
+      { id: 8, image: '8.png', reaction: '8-8.png', death: '8-8-8.png' },
+      { id: 9, image: '9.png', reaction: '9-9.png', death: '9-9-9.png' },
+      { id: 10, image: '10.png', reaction: '10-10.png', death: '10-10-10.png' },
+      { id: 11, image: '11.png', reaction: '11-11.png', death: '11-11-11.png' }
+    ];
+
+    catDetails.forEach(catData => {
+      const catImage = createCat(catData);
+      cats.push(catImage);
+      moveCat(catImage); // 처음 위치 설정
+      startCatMovement(catImage); // 각 고양이가 독립적으로 움직이기 시작
+
+      catImage.addEventListener('mouseenter', function () {
+        if (!catImage.classList.contains('caught')) {
+          // 반응 이미지로 변경
+          catImage.style.backgroundImage = `url('${catImage.dataset.reaction}')`;
+        }
+      });
+
+      catImage.addEventListener('mouseleave', function () {
+        if (!catImage.classList.contains('caught')) {
+          // 원래 이미지로 복원
+          catImage.style.backgroundImage = `url('${catData.image}')`;
+        }
+      });
+
+      catImage.addEventListener('click', function () {
+        if (!isCatCaught) {
+          isCatCaught = true;
+          catImage.style.backgroundImage = `url('${catImage.dataset.death}')`;
+          catImage.classList.add('caught');
+
+          // Bomb 추가 (z-index를 -1로 설정하여 가장 아래로 배치)
+          const bomb = document.createElement('div');
+          bomb.classList.add('bomb');
+          bomb.style.left = `${catImage.offsetLeft + 25}px`;
+          bomb.style.top = `${catImage.offsetTop + 25}px`;
+          document.body.appendChild(bomb);
+
+          const mouse = document.createElement('div');
+          mouse.classList.add('mouse');
+          mouse.style.left = `${catImage.offsetLeft + 50}px`;
+          mouse.style.top = `${catImage.offsetTop + 50}px`;
+          document.body.appendChild(mouse);
+          mouse.style.display = 'block';
+          mouse.style.animation = 'fly 0.5s forwards';
+
+          setTimeout(() => {
+            catImage.classList.add('disappear');
+            bomb.classList.add('disappear');
+            mouse.classList.add('disappear');
+
+            setTimeout(() => {
+              catImage.remove();
+              bomb.remove();
+              mouse.remove();
+              isCatCaught = false;
+            }, 500);
+          }, 500);
+        }
+      });
+    });
   </script>
 </body>
 </html>
-

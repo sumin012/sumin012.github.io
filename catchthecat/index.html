@@ -10,7 +10,7 @@
       padding: 0;
       height: 100%;
       overflow: hidden;
-      background-color: #FFD580; /* 배경 색상 설정 (옅은 주황색) */
+      background-color: #FFD580; /* 쨍한 주황색으로 변경 */
     }
 
     .background {
@@ -26,8 +26,8 @@
 
     .mouse {
       position: absolute;
-      width: 300px; /* 크기를 3배로 변경 */
-      height: 300px; /* 크기를 3배로 변경 */
+      width: 300px;
+      height: 300px;
       background: url('mouse.png') no-repeat center center;
       background-size: contain;
       display: none;
@@ -58,21 +58,36 @@
       animation: disappear 0.5s forwards;
     }
 
-    @keyframes fly {
+    @keyframes chargeAtCat {
       0% {
-        transform: translate(-50%, -100%) rotate(0deg) scale(1);
-      }
-      25% {
-        transform: translate(50px, -50px) rotate(90deg) scale(1.5);
-      }
-      50% {
-        transform: translate(100px, 0) rotate(180deg) scale(2);
-      }
-      75% {
-        transform: translate(50px, 50px) rotate(270deg) scale(1.5);
+        transform: translate(500px, 0) scale(1);
       }
       100% {
-        transform: translate(0, 0) rotate(360deg) scale(1);
+        transform: translate(0, -100px) scale(2); /* 세로 위치를 더 위로 설정 */
+      }
+    }
+
+    @keyframes shakeCat {
+      0% {
+        transform: translate(0, 0);
+      }
+      50% {
+        transform: translate(10px, 0);
+      }
+      100% {
+        transform: translate(0, 0);
+      }
+    }
+
+    @keyframes catDie {
+      0% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 0;
       }
     }
 
@@ -81,6 +96,7 @@
       background-position: center center;
       background-repeat: no-repeat;
       background-size: contain;
+      animation: shakeCat 0.3s ease-in-out forwards;
     }
 
     .caught {
@@ -100,7 +116,7 @@
       width: 100%;
       height: 100%;
       background: url('start.png') no-repeat center center;
-      background-size: cover; /* 이미지가 화면에 꽉 차도록 설정 */
+      background-size: cover;
       cursor: pointer;
       border: none;
       outline: none;
@@ -108,11 +124,39 @@
 
     .timer {
       position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 36px;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 30px;
       font-weight: bold;
-      color: black;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .ending-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('ending.png') no-repeat center center;
+      background-size: cover;
+      cursor: pointer;
+      display: none;
+    }
+
+    .fail-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('fail.png') no-repeat center center;
+      background-size: cover;
+      cursor: pointer;
+      display: none;
     }
   </style>
 </head>
@@ -121,13 +165,20 @@
     <button class="start-button"></button>
   </div>
 
+  <div class="ending-screen"></div>
+  <div class="fail-screen"></div>
+
   <script>
-    const catCount = 11; // 고양이의 총 개수
+    const catCount = 11;
     const cats = [];
     let isCatCaught = false;
-    let catsCaughtCount = 0;  // 고양이를 잡은 수 추적
-    let timer;
-    let timeLeft = 15;  // 타이머 15초로 설정
+    let catsCaughtCount = 0;
+    let timerInterval;
+    let timeLeft = 15; // 타이머 15초로 변경
+    let timerElement;
+    let endingScreenElement = document.querySelector('.ending-screen');
+    let failScreenElement = document.querySelector('.fail-screen');
+    let isGameOver = false;
 
     function moveCat(catImage) {
       const x = Math.random() * (window.innerWidth - 200);
@@ -172,20 +223,27 @@
     ];
 
     function startGame() {
-      // Start 버튼 숨기기
       document.querySelector('.start-container').style.display = 'none';
 
-      // 타이머 시작
-      timer = setInterval(() => {
+      timerElement = document.createElement('div');
+      timerElement.classList.add('timer');
+      timerElement.innerText = `Time: ${timeLeft}s`;
+      document.body.appendChild(timerElement);
+
+      timerInterval = setInterval(() => {
         timeLeft--;
-        document.querySelector('.timer').textContent = timeLeft;
+        timerElement.innerText = `Time: ${timeLeft}s`;
+
         if (timeLeft <= 0) {
-          clearInterval(timer);
-          showFailScreen();  // 시간이 끝나면 실패 화면 표시
+          clearInterval(timerInterval);
+          if (catsCaughtCount < catCount) {
+            showFailScreen();
+          } else {
+            showEndingScreen();
+          }
         }
       }, 1000);
 
-      // 고양이들 생성 및 움직임 시작
       catDetails.forEach(catData => {
         const catImage = createCat(catData);
         cats.push(catImage);
@@ -207,7 +265,7 @@
         catImage.addEventListener('click', function () {
           if (!isCatCaught) {
             isCatCaught = true;
-            catsCaughtCount++;  // 고양이를 잡을 때마다 카운트 증가
+            catsCaughtCount++;
             catImage.style.backgroundImage = `url('${catImage.dataset.death}')`;
             catImage.classList.add('caught');
 
@@ -217,14 +275,13 @@
             bomb.style.top = `${catImage.offsetTop + 25}px`;
             document.body.appendChild(bomb);
 
-            // 쥐 애니메이션 생성
             const mouse = document.createElement('div');
             mouse.classList.add('mouse');
             mouse.style.left = `${catImage.offsetLeft + 50}px`;
             mouse.style.top = `${catImage.offsetTop + 50}px`;
             document.body.appendChild(mouse);
             mouse.style.display = 'block';
-            mouse.style.animation = 'fly 0.5s forwards';
+            mouse.style.animation = 'chargeAtCat 0.25s forwards'; /* 쥐의 속도를 더 빠르게 */
 
             setTimeout(() => {
               catImage.classList.add('disappear');
@@ -239,9 +296,8 @@
               }, 500);
             }, 500);
 
-            // 모든 고양이를 잡았을 때
             if (catsCaughtCount === catCount) {
-              showEndingScreen();  // ending.png 표시
+              showEndingScreen();
             }
           }
         });
@@ -249,33 +305,37 @@
     }
 
     function showEndingScreen() {
-      // Body 배경을 ending.png로 변경
-      document.body.style.backgroundImage = "url('ending.png')";
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-      document.body.style.backgroundRepeat = "no-repeat";
+      if (!isGameOver && catsCaughtCount === catCount) {
+        isGameOver = true;
+        endingScreenElement.style.display = 'block';
+        endingScreenElement.addEventListener('click', resetGame);
 
-      // 3초 후 시작 버튼 다시 표시
-      setTimeout(() => {
-        document.querySelector('.start-container').style.display = 'block';
-        document.body.style.backgroundImage = ""; // 배경 초기화
-        catsCaughtCount = 0; // 게임 리셋
-      }, 3000);
+        timerElement.style.display = 'none';
+        setTimeout(() => {
+          resetGame();
+        }, 3000); // Reset the game after 3 seconds
+      }
     }
 
     function showFailScreen() {
-      // Body 배경을 fail.png로 변경
-      document.body.style.backgroundImage = "url('fail.png')";
-      document.body.style.backgroundSize = "cover";
-      document.body.style.backgroundPosition = "center";
-      document.body.style.backgroundRepeat = "no-repeat";
+      if (catsCaughtCount < catCount && !isGameOver) {
+        failScreenElement.style.display = 'block';
+        failScreenElement.addEventListener('click', resetGame);
+        timerElement.style.display = 'none';
+        cats.forEach(cat => cat.remove());
+      }
+    }
 
-      // 3초 후 시작 버튼 다시 표시
-      setTimeout(() => {
-        document.querySelector('.start-container').style.display = 'block';
-        document.body.style.backgroundImage = ""; // 배경 초기화
-        catsCaughtCount = 0; // 게임 리셋
-      }, 3000);
+    function resetGame() {
+      failScreenElement.style.display = 'none';
+      endingScreenElement.style.display = 'none';
+      document.querySelector('.start-container').style.display = 'block';
+      document.body.style.backgroundImage = "";
+      catsCaughtCount = 0;
+      timeLeft = 15; // 타이머 15초로 리셋
+      clearInterval(timerInterval);
+      cats.length = 0; // 고양이 배열 초기화
+      isGameOver = false;
     }
 
     document.querySelector('.start-button').addEventListener('click', startGame);
